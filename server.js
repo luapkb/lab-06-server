@@ -66,7 +66,7 @@ function eventBrightHandler (req, res){
     .then( eventData => {
       const eventSummaries = [];
       eventData.body.daily.data.forEach( (day) =>{
-        eventSummaries.push(new event(day));
+        eventSummaries.push(new Event(day));
 
       });
       console.log(eventSummaries, 'a string');
