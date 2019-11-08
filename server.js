@@ -79,6 +79,10 @@ function trailsHandler (req, res) {
     })
     .catch(error => errorHandler(error, req, res));
 }
+function formatDateTime(string){
+  let date =new Date(string);
+  return date.toString();
+}
 function TrailsObj (trails) {
   this.name = trails.name;
   this.location = trails.location;
@@ -88,8 +92,8 @@ function TrailsObj (trails) {
   this.summary = trails.summary;
   this.trail_url = trails.url;
   this.conditions = trails.conditionStatus;
-  this.condition_date = trails.conditionDate;
-  this.condition_time = trails.conditionDate;
+  this.condition_date = formatDateTime(trails.conditionDate).slice(0,15);
+  this.condition_time = formatDateTime(trails.conditionDate).slice(17);
 }
 
 function Event(data){
