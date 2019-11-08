@@ -12,14 +12,13 @@ const PORT = process.env.PORT || 5200;
 const app = express();
 app.use(cors());
 
-app.listen(PORT, () => console.log(`listening on PORT ${PORT}`));
 
 app.get('/location', locationHandler);
 app.get('/weather', weatherHandler);
-app.get('/events', eventBrightHandler);
+app.get('/trails', trailsHandler);
 app.use('*', notFoundHandler);
 app.use(errorHandler);
- 
+
 function locationHandler(request, response){
   //Get real data from real API
   // let rawData = require('./data/geo.json');
@@ -29,6 +28,7 @@ function locationHandler(request, response){
     .then(data => {
       let location = new Location(request.query.data, data.body);
       response.status(200).json(location);
+      console.log('Location!!!!!', response.status(200).json(location));
     })
     .catch(error => errorHandler(error, request, response));
 
@@ -41,38 +41,55 @@ function Location(city, locationData) {
   this.longitude = locationData.results[0].geometry.location.lng;
 }
 
-function weatherHandler(request, response){
+function weatherHandler(req, res){
 
-  const url = `https://api.darksky.net/forecast/${process.env.WEATHER_API_KEY}/${request.query.data.latitude},${request.query.data.longitude}`;
+  console.log('i got this far');
 
+  const url = `https://api.darksky.net/forecast/${process.env.WEATHER_API_KEY}/${req.query.data.latitude},${req.query.data.longitude}`;
+  console.log(req.query.longitude);
+  console.log(req.query.data.latitude);
   superagent.get(url)
+
     .then( weatherData => {
       const weatherSummaries = [];
       weatherData.body.daily.data.forEach( (day) => {
         weatherSummaries.push(new Weather(day) );
       });
 
-      response.status(200).json(weatherSummaries);
+      res.status(200).json(weatherSummaries);
     })
-    .catch(error => errorHandler(error, request, response));
+    .catch(error => errorHandler(error, req, res));
 }
 
-function eventBrightHandler (req, res){
-  console.log(', im working  ');
-  const url = `https://www.eventbriteapi.com/v3/users/me/${req.query.data.latitude}, ${req.query.data.longitude}?token=${process.env.EVENTBRITE_API_KEY}`;
-
+function trailsHandler (req, res) {
+  console.log('req.query', req.query);
+  const url = `https://www.hikingproject.com/data/get-trails?lat=${req.query.data.latitude}&lon=${req.query.data.longitude}&maxDistance=20&key=${process.env.TRAIL_API_KEY}`;
+  console.log(req.query, 'REQ.query');
   superagent.get(url)
-    .set({'authorization': `bearer ${process.env.EVENBRITE_API_KEY}`,})
-    .then( eventData => {
-      const eventSummaries = [];
-      eventData.body.daily.data.forEach( (day) =>{
-        eventSummaries.push(new Event(day));
 
+    .then(data => {
+      console.log('data', data.body.trails);
+      let trailsData = data.body.trails;
+      let trails = trailsData.map(value => {
+        console.log(value);
+        return new TrailsObj(value);
       });
-      console.log(eventSummaries, 'a string');
-      res.status(200).json(eventSummaries);
+      console.log('trails', trails);
+      res.status(200).json(trails);
     })
-    .catch(error => errorHandler(error,req, res));
+    .catch(error => errorHandler(error, req, res));
+}
+function TrailsObj (trails) {
+  this.name = trails.name;
+  this.location = trails.location;
+  this.length = trails.length;
+  this.stars = trails.stars;
+  this.star_votes = trails.star_votes;
+  this.summary = trails.summary;
+  this.trail_url = trails.url;
+  this.conditions = trails.conditionStatus;
+  this.condition_date = trails.conditionDate;
+  this.condition_time = trails.conditionDate;
 }
 
 function Event(data){
@@ -92,3 +109,5 @@ function errorHandler(error, request, response){
 }
 
 app.use(express.static('./public'));
+
+app.listen(PORT, () => console.log(`listening on PORT ${PORT}`));
